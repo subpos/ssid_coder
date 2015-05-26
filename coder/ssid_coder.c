@@ -277,7 +277,7 @@ main (int argc, char *argv[])
     struct sps_data decoded_data; 	
     
 	encode_data.dev_id		= 99;
-	encode_data.lat			= 991234567;
+	encode_data.lat			= 891234567;
 	encode_data.lng			= 997654321;
 	encode_data.altitude	= 12345678;
 	encode_data.tx_pwr		= -900;

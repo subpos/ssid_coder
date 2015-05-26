@@ -33,83 +33,150 @@ function encode_ssid() {
     var three_d_map = document.forms["frmCoder"]["3d"].checked;
     var path_loss = document.forms["frmCoder"]["path"].value;
     var res = document.forms["frmCoder"]["res"].value;
+    var invalid = document.forms["frmCoder"]["invalid"].value;
     
     
-    if (lng == null || lng == "") {
+    /* if (lng == null || lng == "") {
         alert("Longitude must be filled out");
         return false;
     }
     if (lat == null || lat == "") {
         alert("Latitude must be filled out");
         return false;
-    }
+    }*/
     if (lat > 90 || lat < -90){
-        alert("Please enter valid latitude value (-90 to 90)");
+        alert("Please enter valid latitude value (-90 to 90).");
         return false;
     }
     if (lng > 180 || lng < -180){
-        alert("Please enter valid latitude value (-180 to 180)");
+        alert("Please enter valid latitude value (-180 to 180).");
         return false;
     }
+    if (tx_pwr < -100 || tx_pwr > 23){
+        alert("Please enter valid tx value (-100 to 23dbm).");
+        return false;
+    }
+    if (app_id > 16777215){
+        alert("Please enter valid 24 bit application ID.");
+        return false;
+    }
+    if (dev_id > 16777215){
+        alert("Please enter valid 24 bit application ID.");
+        return false;
+    }
+    if (altitude > 67108863 || altitude < -67108863){
+        alert("Please enter valid altitude.");
+        return false;
+    }
+    
+    var re = new RegExp( /^[0-9A-Fa-f]+$/ );
+    if (!(re.test(res))) {
+        alert("Please enter valid reserved hex value.");
+        return false;
+    }
+    
+    if (parseInt(res, 16) > 4095) {
+        alert("Please enter valid reserved hex value.");
+        return false;
+    }
+    invalid = invalid.trim();
+    var invalid_chars = invalid.split(" ");
+    invalid_chars = uniq(invalid_chars);
+    
+
+    if (invalid.length > 0) {
+        for (index = 0; index < invalid_chars.length; ++index) {
+
+            if (!(re.test(invalid_chars[index]))) {
+                alert("Please enter valid invalid chars.");
+                return false;
+            }
+        }
+        
+        //Note 0x7f can never be encoded out if 0x00 is encoded out.
+        if ((invalid.indexOf("7f") !=-1) & (invalid.indexOf("00") !=-1)) {
+            alert("Cannot code both 0x7f and 0x00 out.");
+            return false;
+        }
+        
+        var test_invalid = [];
+        
+        //Test that two adjacent hex values aren't being coded out.
+        for (index = 0; index < invalid_chars.length; ++index) {
+            test_invalid.push(parseInt(invalid_chars[index], 16));
+        }
+        test_invalid = test_invalid.sort();
+        var prev;
+        for (index = 0; index < test_invalid.length; ++index) {
+            
+            if (prev == test_invalid[index]) {
+                alert("Cannot have two invalid chars adjacent to each other.");
+                return false;
+            }
+            prev = test_invalid[index] +1;
+        }
+    }
+    
+    
+    
     lat = lat * 10000000;
     lng = lng * 10000000;
 
-	var encoded_string = new Uint8Array(31);
-	
-	//For the string data, we can just read it raw; nothing fancy here.
-	//Encoding SSIDs doesn't happen often.
-	
-	//SPS TAG
-	encoded_string[ 0] = tag.charCodeAt(0);
-	encoded_string[ 1] = tag.charCodeAt(1);
-	encoded_string[ 2] = tag.charCodeAt(2);
-	
-	//Device ID
-	encoded_string[ 3] = (dev_id        >> 16) & 0xFF;
-	encoded_string[ 4] = (dev_id        >>  8) & 0xFF;
-	encoded_string[ 5] = (dev_id             ) & 0xFF;
-	
-	//Latitude
-	encoded_string[ 6] = (lat           >> 24) & 0xFF;
-	encoded_string[ 7] = (lat           >> 16) & 0xFF;
-	encoded_string[ 8] = (lat           >>  8) & 0xFF;
-	encoded_string[ 9] = (lat                ) & 0xFF;
-	
-	//Longitude
-	encoded_string[10] = (lng           >> 24) & 0xFF;
-	encoded_string[11] = (lng           >> 16) & 0xFF;
-	encoded_string[12] = (lng           >>  8) & 0xFF;
-	encoded_string[13] = (lng                ) & 0xFF;
+    var encoded_string = new Uint8Array(31);
+    
+    //For the string data, we can just read it raw; nothing fancy here.
+    //Encoding SSIDs doesn't happen often.
+    
+    //SPS TAG
+    encoded_string[ 0] = tag.charCodeAt(0);
+    encoded_string[ 1] = tag.charCodeAt(1);
+    encoded_string[ 2] = tag.charCodeAt(2);
+    
+    //Device ID
+    encoded_string[ 3] = (dev_id        >> 16) & 0xFF;
+    encoded_string[ 4] = (dev_id        >>  8) & 0xFF;
+    encoded_string[ 5] = (dev_id             ) & 0xFF;
+    
+    //Latitude
+    encoded_string[ 6] = (lat           >> 24) & 0xFF;
+    encoded_string[ 7] = (lat           >> 16) & 0xFF;
+    encoded_string[ 8] = (lat           >>  8) & 0xFF;
+    encoded_string[ 9] = (lat                ) & 0xFF;
+    
+    //Longitude
+    encoded_string[10] = (lng           >> 24) & 0xFF;
+    encoded_string[11] = (lng           >> 16) & 0xFF;
+    encoded_string[12] = (lng           >>  8) & 0xFF;
+    encoded_string[13] = (lng                ) & 0xFF;
     
     //Application ID
-	encoded_string[14] = (app_id        >> 16) & 0xFF;
-	encoded_string[15] = (app_id        >>  8) & 0xFF;
-	encoded_string[16] = (app_id             ) & 0xFF;
-	
-	//Altitude
-	encoded_string[17] = (Math.abs(altitude) >> 18) & 0xFF;
-	encoded_string[18] = (Math.abs(altitude) >> 10) & 0xFF;
-	encoded_string[19] = (Math.abs(altitude) >>  2) & 0xFF;
-	
-	encoded_string[20] =((Math.abs(altitude)        & 0x03) << 6)
-                       | (altitude < 0) << 5
-                       |  off_map       << 4 
-	                   |  three_d_map   << 3 
-                       |((tx_pwr + 1000)>> 8   & 0x07);
-    encoded_string[21] = (tx_pwr + 1000)       & 0xFF;
-	
+    encoded_string[14] = (app_id        >> 16) & 0xFF;
+    encoded_string[15] = (app_id        >>  8) & 0xFF;
+    encoded_string[16] = (app_id             ) & 0xFF;
+    
+    //Altitude
+    encoded_string[17] = (Math.abs(altitude) >> 18) & 0xFF;
+    encoded_string[18] = (Math.abs(altitude) >> 10) & 0xFF;
+    encoded_string[19] = (Math.abs(altitude) >>  2) & 0xFF;
+    
+    encoded_string[20] =((Math.abs(altitude)        & 0x03) << 6)
+                       | boolToVal(altitude < 0)  << 5
+                       | boolToVal(off_map)       << 4 
+                       | boolToVal(three_d_map)   << 3 
+                       |((tx_pwr * 10 + 1000)>> 8   & 0x07);
+    encoded_string[21] = (tx_pwr * 10 + 1000)       & 0xFF;
+    
 
-	encoded_string[22] = (path_loss     << 5)  & 0xE0
-	                   |((res >> 8) & 0x1F);
-	encoded_string[23] = (res               )  & 0xFF;
-	
+    encoded_string[22] = ((parseInt(path_loss)  & 0x07)  << 5)
+                       |((parseInt(res, 16) >> 8)   & 0x1F);
+    encoded_string[23] = (parseInt(res, 16)     )   & 0xFF;
+    
 
-	
     //Transform encoded string and create "ASCII" 7bit mask
     var x;
     var ascii_mask = 0; //21 bits (for 21 bytes) to encode
     for (x = 3; x <= 23; x++)
-	{
+    {
         //check if MSB of byte is 1
         if ((encoded_string[x] & 0x80) == 0x80) {
             encoded_string[x] = encoded_string[x] & 0x7F;
@@ -118,7 +185,7 @@ function encode_ssid() {
             ascii_mask = (ascii_mask << 1) | 0;
         }
         //printf("%x\n",ascii_mask);
-	}
+    }
     
     //create mask in such a way that we don't have to mask the mask:
     //7 bit coding since we have a nice factor of 7 for num of bytes
@@ -127,73 +194,100 @@ function encode_ssid() {
     encoded_string[25] = (ascii_mask   >>  7) & 0x7F;
     encoded_string[26] = (ascii_mask        ) & 0x7F;
     
-	//Calculate coding mask, check to see if any chars contain
-	//special control characters
-	//LF - 0A
-    //CR - 0D
-    //"  - 22	
-	//+  - 2B
-	//nul- 00
-    //sp - 20
-    
-    //Note 0x7f can never be encoded out if 0x00 is encoded out.
+    //Calculate coding mask, check to see if any chars contain
+    //special control characters
 
-	var coding_mask = 0;
-	for (x = 3; x <= 26; x++)
-	{
-		if (encoded_string[x] == 0x0a ||
-			encoded_string[x] == 0x0d ||
-			encoded_string[x] == 0x22 ||
-			encoded_string[x] == 0x2b ||
-			encoded_string[x] == 0x00 ||
-			encoded_string[x] == 0x20 ) 
-		{
-			coding_mask = (coding_mask << 1) | 1;
-			encoded_string[x] = encoded_string[x] + 1;
-		} else {
-			coding_mask = (coding_mask << 1) | 0;
-		}
-		//printf("%x\n",coding_mask);
-	}
-	//Shift to leave 4 bits to encode out control chars from coding mask .
-	coding_mask = coding_mask << 4;
+    var found = false;
+    var coding_mask = 0;
+    if (invalid.length > 0) {
+        for (x = 3; x <= 26; x++)
+        {
+            found = false;
+            for (index = 0; index < invalid_chars.length; ++index) {
+                if (encoded_string[x] == parseInt(invalid_chars[index], 16)) {
+                    found = true;
+                }
+            }
+            if (found == true) {
+                coding_mask = (coding_mask << 1) | 1;
+                if (encoded_string[x] == 0x7f) { 
+                    encoded_string[x] = 0;
+                } else {
+                    encoded_string[x] = encoded_string[x] + 1;
+                }
+            } else {
+                coding_mask = (coding_mask << 1) | 0;
+            }
+            //printf("%x\n",coding_mask);
+        }
+    }
+    //Shift to leave 4 bits to encode out control chars from coding mask .
+    coding_mask = coding_mask << 4;
     var byte_temp = 0;
-	var bit_mask;
-	//Now check the coding mask for any control chars. Treat as 7 bit word
-	for (x = 3; x >= 0; x--)
-	{
-	   bit_mask = 0x7F << x*7;
-	   byte_temp = ((coding_mask >> x*7) & 0x7F);
-	   if (byte_temp == 0x0a ||
-	       byte_temp == 0x0d ||
-		   byte_temp == 0x22 ||
-           byte_temp == 0x2b ||
-           byte_temp == 0x00 ||
-           byte_temp == 0x20 ) 
-		{
-			byte_temp = byte_temp + 1;
-			coding_mask = (coding_mask & ~bit_mask) | (byte_temp << x*7);
-			coding_mask = coding_mask  | (1 << x);
-		} 	
-	}
-	
+    var bit_mask;
+    //Now check the coding mask for any control chars. Treat as 7 bit word
+    if (invalid.length > 0) {
+        for (x = 3; x >= 0; x--)
+        {
+            bit_mask = 0x7F << x*7;
+            byte_temp = ((coding_mask >> x*7) & 0x7F);
+            found = false;
+            for (index = 0; index < invalid_chars.length; ++index) {
+                if (byte_temp == parseInt(invalid_chars[index], 16)) {
+                    found = true;
+                }
+            }     
+            if (found == true) {
+                if (byte_temp == 0x7f) {
+                    byte_temp = 0;
+                } else {
+                    byte_temp = byte_temp + 1;
+                }
+                coding_mask = (coding_mask & ~bit_mask) | (byte_temp << x*7);
+                coding_mask = coding_mask  | (1 << x);
+            }
+        }
+    }
+    
     //Encode as 7 bits x4 (28 bytes being masked; neat factor, no wastage, except for the 4 bits which we can't use)
     encoded_string[27] = (coding_mask   >> 21) & 0x7F;
-	encoded_string[28] = (coding_mask   >> 14) & 0x7F;
-	encoded_string[29] = (coding_mask   >> 7 ) & 0x7F;
-	encoded_string[30] = (coding_mask        ) & 0x7F;
+    encoded_string[28] = (coding_mask   >> 14) & 0x7F;
+    encoded_string[29] = (coding_mask   >> 7 ) & 0x7F;
+    encoded_string[30] = (coding_mask        ) & 0x7F;
    
-	
-	document.getElementById("output").value = String.fromCharCode.apply(null, encoded_string);
+    
+    document.getElementById("output").value = String.fromCharCode.apply(null, encoded_string);
     
     document.getElementById("output_hex").value = toHex(String.fromCharCode.apply(null, encoded_string));
-	
+    
+};
+
+function uniq(a) {
+    var seen = {};
+    var out = [];
+    var len = a.length;
+    var j = 0;
+    for(var i = 0; i < len; i++) {
+         var item = a[i];
+         if(seen[item] !== 1) {
+               seen[item] = 1;
+               out[j++] = item;
+         }
+    }
+    return out;
 };
 function toHex(str) {
-	var hex = '';
-	for(var i=0;i<str.length;i++) {
+    var hex = '';
+    for(var i=0;i<str.length;i++) {
     
-		hex += '\\x'+("00" + str.charCodeAt(i).toString(16)).substr(-2);
-	}
-	return hex;
+        hex += '\\x'+("00" + str.charCodeAt(i).toString(16)).substr(-2);
+    }
+    return hex;
+};
+function boolToVal(bool) {
+    if (bool == true) {
+        return 1;
+    } else {
+        return 0;
+    }
 };
