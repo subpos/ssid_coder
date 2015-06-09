@@ -36,9 +36,9 @@ struct sps_data {
 	int16_t       tx_pwr;      //11 bit
 	bool          off_map;     //1  bit
 	bool          three_d_map; //1  bit
-	uint16_t      res;         //13 bit
+	uint16_t      res;         //12 bit
 	uint32_t      app_id;      //24 bit
-	int8_t        path_loss;   //3  bit
+	uint8_t       path_loss;   //3  bit
 };
 
 char * encode_ssid(struct sps_data encode_data){
@@ -252,19 +252,22 @@ struct sps_data decode_ssid(unsigned char* str_decode){
 	}
 	
 	//Now we can easily populate the struct
+    
+    //Be careful of undefined left shifts (hence casting)
+    //Some c compilers don't let you shift these values past their size.
 
-	decoded_data.dev_id			= ssid[ 3] << 16 | ssid[ 4] <<  8 | ssid[ 5];
-	decoded_data.lat			= ssid[ 6] << 24 | ssid[ 7] << 16 | ssid[ 8] <<  8 | ssid[ 9];
-	decoded_data.lng			= ssid[10] << 24 | ssid[11] << 16 | ssid[12] <<  8 | ssid[13];
- 	decoded_data.app_id			= ssid[14] << 16 | ssid[15] <<  8 | ssid[16];  
-	decoded_data.altitude		= ssid[17] << 18 | ssid[18] << 10 | ssid[19] <<  2 | ((ssid[20] >> 6) & 0x03);
+	decoded_data.dev_id			= (uint32_t)ssid[ 3] << 16 | (uint32_t)ssid[ 4] <<  8 | (uint32_t)ssid[ 5];
+	decoded_data.lat			= (uint32_t)ssid[ 6] << 24 | (uint32_t)ssid[ 7] << 16 | (uint32_t)ssid[ 8] <<  8 | (uint32_t)ssid[ 9];
+	decoded_data.lng			= (uint32_t)ssid[10] << 24 | (uint32_t)ssid[11] << 16 | (uint32_t)ssid[12] <<  8 | (uint32_t)ssid[13];
+ 	decoded_data.app_id			= (uint32_t)ssid[14] << 16 | (uint32_t)ssid[15] <<  8 | (uint32_t)ssid[16];  
+	decoded_data.altitude		= (uint32_t)ssid[17] << 18 | (uint32_t)ssid[18] << 10 | (uint32_t)ssid[19] <<  2 | ((ssid[20] >> 6) & 0x03);
     if (((ssid[20] & 0x20) >> 5) & 1) decoded_data.altitude = (decoded_data.altitude * -1);
 	decoded_data.off_map		= ((ssid[20] & 0x10) >> 4) & 1;
 	decoded_data.three_d_map	= ((ssid[20] & 0x08) >> 3) & 1;
-	decoded_data.tx_pwr			= ((ssid[20] & 0x07) << 8) | ssid[21];
+	decoded_data.tx_pwr			= ((uint16_t)(ssid[20] & 0x07) << 8) | ssid[21];
     decoded_data.tx_pwr         = decoded_data.tx_pwr - 1000;
     decoded_data.path_loss   	= ( ssid[22] & 0xE0) >> 5;  
-    decoded_data.res			= (ssid[22]  & 0x1F  << 8) | ssid[23];
+    decoded_data.res			= ((uint32_t)(ssid[22]  & 0x1F)  << 8) | ssid[23];
 	
 	return decoded_data;
 	
