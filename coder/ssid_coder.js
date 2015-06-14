@@ -25,10 +25,38 @@ function encode_ssid() {
 
     var dev_id = document.forms["frmCoder"]["devid"].value;
     var app_id = document.forms["frmCoder"]["appid"].value;
-    var lat = document.forms["frmCoder"]["lat"].value;
-    var lng = document.forms["frmCoder"]["long"].value;
+    var latCheck = document.forms["frmCoder"]["lat"].value;
+    var latInt = document.forms["frmCoder"]["lat"].value.split(".")[0];
+    if (document.forms["frmCoder"]["lat"].value.contains("."))
+    {
+        var latDec = document.forms["frmCoder"]["lat"].value.split(".")[1];
+    } else {
+        var latDec = 0000000;
+    }
+    latDec = pad_right(latDec, "0", 7);
+    lat = parseInt(latInt + latDec);
+    var lngCheck = document.forms["frmCoder"]["long"].value;
+    var lngInt = document.forms["frmCoder"]["long"].value.split(".")[0];
+    if (document.forms["frmCoder"]["long"].value.contains("."))
+    {
+        var lngDec = document.forms["frmCoder"]["long"].value.split(".")[1];
+    } else {
+        var lngDec = "0000000";
+    }
+
+    lngDec = pad_right(lngDec, "0", 7);
+    lng = parseInt(lngInt + lngDec);
     var altitude = document.forms["frmCoder"]["alt"].value;
-    var tx_pwr = document.forms["frmCoder"]["txpwr"].value;
+    var tx_pwrCheck = document.forms["frmCoder"]["txpwr"].value;
+    var tx_pwrInt = document.forms["frmCoder"]["txpwr"].value.split(".")[0];
+    if (document.forms["frmCoder"]["txpwr"].value.contains("."))
+    {
+        var tx_pwrDec = document.forms["frmCoder"]["txpwr"].value.split(".")[1];
+    } else {
+        var tx_pwrDec = "0";
+    }
+
+    tx_pwr = parseInt(tx_pwrInt + tx_pwrDec);
     var off_map = document.forms["frmCoder"]["off"].checked;
     var three_d_map = document.forms["frmCoder"]["3d"].checked;
     var path_loss = document.forms["frmCoder"]["path"].value;
@@ -44,15 +72,15 @@ function encode_ssid() {
         alert("Latitude must be filled out");
         return false;
     }*/
-    if (lat > 90 || lat < -90){
+    if (latCheck > 90 || latCheck < -90){
         alert("Please enter valid latitude value (-90 to 90).");
         return false;
     }
-    if (lng > 180 || lng < -180){
+    if (lngCheck > 180 || lngCheck < -180){
         alert("Please enter valid latitude value (-180 to 180).");
         return false;
     }
-    if (tx_pwr < -100 || tx_pwr > 23){
+    if (tx_pwrCheck < -100 || tx_pwrCheck > 23){
         alert("Please enter valid tx value (-100 to 23dbm).");
         return false;
     }
@@ -119,8 +147,8 @@ function encode_ssid() {
     
     
     
-    lat = lat * 10000000;
-    lng = lng * 10000000;
+    //lat = lat * 10000000;
+    //lng = lng * 10000000;
 
     var encoded_string = new Uint8Array(31);
     
@@ -163,8 +191,8 @@ function encode_ssid() {
                        | boolToVal(altitude < 0)  << 5
                        | boolToVal(off_map)       << 4 
                        | boolToVal(three_d_map)   << 3 
-                       |((tx_pwr * 10 + 1000)>> 8   & 0x07);
-    encoded_string[21] = (tx_pwr * 10 + 1000)       & 0xFF;
+                       |((tx_pwr + 1000)>> 8   & 0x07);
+    encoded_string[21] = (tx_pwr + 1000)       & 0xFF;
     
 
     encoded_string[22] = ((parseInt(path_loss)  & 0x07)  << 5)
@@ -290,4 +318,16 @@ function boolToVal(bool) {
     } else {
         return 0;
     }
+};
+// right padding s with c to a total of n chars
+
+function pad_right(s, c, n) {
+  if (! s || ! c || s.length >= n) {
+    return s;
+  }
+  var max = (n - s.length)/c.length;
+  for (var i = 0; i < max; i++) {
+    s += c;
+  }
+  return s;
 };
