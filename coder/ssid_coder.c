@@ -84,7 +84,7 @@ char * encode_ssid(struct sps_data encode_data){
                        | (encode_data.altitude < 0) << 5
                        |  encode_data.off_map       << 4 
 	                   |  encode_data.three_d_map   << 3 
-                       |((encode_data.tx_pwr + 1000)>> 8   & 0x07);
+                       |((encode_data.tx_pwr + 1000)>> 8   & 0x07); //Note that tx_power is assumed to be shifted (x10)
     encoded_string[21] = (encode_data.tx_pwr + 1000)       & 0xFF;
 	
 
