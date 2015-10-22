@@ -27,7 +27,7 @@ function encode_ssid() {
     var app_id = document.forms["frmCoder"]["appid"].value;
     var latCheck = document.forms["frmCoder"]["lat"].value;
     var latInt = document.forms["frmCoder"]["lat"].value.split(".")[0];
-    if (document.forms["frmCoder"]["lat"].value.contains("."))
+    if (document.forms["frmCoder"]["lat"].value.includes("."))
     {
         var latDec = document.forms["frmCoder"]["lat"].value.split(".")[1];
     } else {
@@ -37,7 +37,7 @@ function encode_ssid() {
     lat = parseInt(latInt + latDec);
     var lngCheck = document.forms["frmCoder"]["long"].value;
     var lngInt = document.forms["frmCoder"]["long"].value.split(".")[0];
-    if (document.forms["frmCoder"]["long"].value.contains("."))
+    if (document.forms["frmCoder"]["long"].value.includes("."))
     {
         var lngDec = document.forms["frmCoder"]["long"].value.split(".")[1];
     } else {
@@ -49,7 +49,7 @@ function encode_ssid() {
     var altitude = document.forms["frmCoder"]["alt"].value;
     var tx_pwrCheck = document.forms["frmCoder"]["txpwr"].value;
     var tx_pwrInt = document.forms["frmCoder"]["txpwr"].value.split(".")[0];
-    if (document.forms["frmCoder"]["txpwr"].value.contains("."))
+    if (document.forms["frmCoder"]["txpwr"].value.includes("."))
     {
         var tx_pwrDec = document.forms["frmCoder"]["txpwr"].value.split(".")[1];
     } else {
