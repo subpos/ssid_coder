@@ -60,6 +60,7 @@ function encode_ssid() {
     } else {
         var tx_pwrDec = "0";
     }
+    tx_pwrDec = tx_pwrDec.substring(0,1);
 
     tx_pwr = parseInt(tx_pwrInt + tx_pwrDec);
     var off_map = document.forms["frmCoder"]["off"].checked;
