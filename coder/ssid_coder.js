@@ -31,9 +31,12 @@ function encode_ssid() {
     {
         var latDec = document.forms["frmCoder"]["lat"].value.split(".")[1];
     } else {
-        var latDec = 0000000;
+        var latDec = "0000000";
     }
+    
     latDec = pad_right(latDec, "0", 7);
+    latDec = latDec.substring(0,7);
+    
     lat = parseInt(latInt + latDec);
     var lngCheck = document.forms["frmCoder"]["long"].value;
     var lngInt = document.forms["frmCoder"]["long"].value.split(".")[0];
@@ -43,8 +46,10 @@ function encode_ssid() {
     } else {
         var lngDec = "0000000";
     }
-
+    
     lngDec = pad_right(lngDec, "0", 7);
+    lngDec = lngDec.substring(0,7);
+    
     lng = parseInt(lngInt + lngDec);
     var altitude = document.forms["frmCoder"]["alt"].value;
     var tx_pwrCheck = document.forms["frmCoder"]["txpwr"].value;
@@ -319,6 +324,7 @@ function boolToVal(bool) {
         return 0;
     }
 };
+
 // right padding s with c to a total of n chars
 
 function pad_right(s, c, n) {
